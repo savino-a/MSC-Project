@@ -2,6 +2,12 @@ import numpy as np
 import numpy
 import matplotlib.pyplot as plt
 import os
+from random import random
+from random import randint
+import plotly.graph_objs as go
+import plotly.offline as pyo
+import plotly.express as px
+import pandas as pd
 
 
 def representer(p, N, t):
@@ -15,8 +21,115 @@ def representer(p, N, t):
     plt.plot(rep2, rep1, marker="*", markersize=t / 80, color="r", linestyle="none")
 
 
-from random import randint
-from random import random
+def representer2(p, N, t):
+    data = {
+        "City": [
+            "Los Angeles",
+            "Houston",
+            "Miami",
+            "New York",
+            "Chicago",
+            "Phoenix",
+            "Philadelphia",
+            "San Antonio",
+            "San Diego",
+            "Dallas",
+            "San Jose",
+            "Austin",
+            "Jacksonville",
+            "Fort Worth",
+            "Columbus",
+            "San Francisco",
+            "Charlotte",
+            "Indianapolis",
+            "Seattle",
+            "Denver",
+            "Washington D.C.",
+            "Boston",
+            "El Paso",
+            "Nashville",
+            "Detroit",
+            "Oklahoma City",
+        ],
+        "Latitude": [
+            34.0522,
+            29.7604,
+            25.7617,
+            40.7128,
+            41.8781,
+            33.4484,
+            39.9526,
+            29.4241,
+            32.7157,
+            32.7767,
+            37.3382,
+            30.2672,
+            30.3322,
+            32.7555,
+            39.9612,
+            37.7749,
+            35.2271,
+            39.7684,
+            47.6062,
+            39.7392,
+            38.9072,
+            42.3601,
+            31.7619,
+            36.1627,
+            42.3314,
+            35.4676,
+        ],
+        "Longitude": [
+            -118.2437,
+            -95.3698,
+            -80.1918,
+            -74.0060,
+            -87.6298,
+            -112.0740,
+            -75.1652,
+            -98.4936,
+            -117.1611,
+            -96.7969,
+            -121.8863,
+            -97.7431,
+            -81.6557,
+            -97.3308,
+            -82.9988,
+            -122.4194,
+            -80.8431,
+            -86.1581,
+            -122.3321,
+            -104.9903,
+            -77.0369,
+            -71.0589,
+            -106.4850,
+            -86.7816,
+            -83.0458,
+            -97.5164,
+        ],
+    }
+
+    # Convert to a DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a scatter map
+    fig = px.scatter_geo(
+        df,
+        lat="Latitude",
+        lon="Longitude",
+        text="City",  # City names as hover text
+        title="Cities in the US",
+        scope="usa",  # Limit map to the USA
+    )
+
+    # Update the trace to make the markers and text larger
+    fig.update_traces(
+        marker=dict(size=16),  # Adjust marker size
+        textfont=dict(size=26),  # Adjust text size
+    )
+
+    # Show the figure
+    fig.show()
 
 
 def circ_ini(N, p):
@@ -35,6 +148,101 @@ def poser_les_villes(N, t):
         x = t * random()
         y = t * random()
         p.append((x, y))
+    return p
+
+
+def poser_les_villes(N, t):
+    data = {
+        "City": [
+            "Los Angeles",
+            "Houston",
+            "Miami",
+            "New York",
+            "Chicago",
+            "Phoenix",
+            "Philadelphia",
+            "San Antonio",
+            "San Diego",
+            "Dallas",
+            "San Jose",
+            "Austin",
+            "Jacksonville",
+            "Fort Worth",
+            "Columbus",
+            "San Francisco",
+            "Charlotte",
+            "Indianapolis",
+            "Seattle",
+            "Denver",
+            "Washington D.C.",
+            "Boston",
+            "El Paso",
+            "Nashville",
+            "Detroit",
+            "Oklahoma City",
+        ],
+        "Latitude": [
+            34.0522,
+            29.7604,
+            25.7617,
+            40.7128,
+            41.8781,
+            33.4484,
+            39.9526,
+            29.4241,
+            32.7157,
+            32.7767,
+            37.3382,
+            30.2672,
+            30.3322,
+            32.7555,
+            39.9612,
+            37.7749,
+            35.2271,
+            39.7684,
+            47.6062,
+            39.7392,
+            38.9072,
+            42.3601,
+            31.7619,
+            36.1627,
+            42.3314,
+            35.4676,
+        ],
+        "Longitude": [
+            -118.2437,
+            -95.3698,
+            -80.1918,
+            -74.0060,
+            -87.6298,
+            -112.0740,
+            -75.1652,
+            -98.4936,
+            -117.1611,
+            -96.7969,
+            -121.8863,
+            -97.7431,
+            -81.6557,
+            -97.3308,
+            -82.9988,
+            -122.4194,
+            -80.8431,
+            -86.1581,
+            -122.3321,
+            -104.9903,
+            -77.0369,
+            -71.0589,
+            -106.4850,
+            -86.7816,
+            -83.0458,
+            -97.5164,
+        ],
+    }
+    # Convert to a DataFrame
+    df = pd.DataFrame(data)
+
+    # Create a list of tuples (latitude, longitude)
+    p = list(zip(df["Latitude"], df["Longitude"]))
     return p
 
 
@@ -288,29 +496,29 @@ def recuit(N, t):
         x1, y1 = p[i1]
         x2, y2 = p[i2]
         plt.arrow(
-            y1, x1, y2 - y1, x2 - x1, head_width=t / 80, width=t / 2000, color="g"
+            y1, x1, y2 - y1, x2 - x1, head_width=t / 800, width=t / 5000, color="g"
         )
     i2 = circbr[0]
     i1 = circbr[N - 1]
     x1, y1 = p[i1]
     x2, y2 = p[i2]
-    plt.arrow(y1, x1, y2 - y1, x2 - x1, head_width=t / 80, width=t / 2000, color="g")
+    plt.arrow(y1, x1, y2 - y1, x2 - x1, head_width=t / 800, width=t / 5000, color="g")
     for i in range(1, N):
         i2 = circmin[i]
         i1 = circmin[i - 1]
         x1, y1 = p[i1]
         x2, y2 = p[i2]
         plt.arrow(
-            y1, x1, y2 - y1, x2 - x1, head_width=t / 80, width=t / 2000, color="b"
+            y1, x1, y2 - y1, x2 - x1, head_width=t / 800, width=t / 5000, color="b"
         )
     i2 = circmin[0]
     i1 = circmin[N - 1]
     x1, y1 = p[i1]
     x2, y2 = p[i2]
-    plt.arrow(y1, x1, y2 - y1, x2 - x1, head_width=t / 80, width=t / 2000, color="b")
+    plt.arrow(y1, x1, y2 - y1, x2 - x1, head_width=t / 800, width=t / 5000, color="b")
     plt.show()
     return (circ, dmin, dbr)
 
 
-res = recuit(5, 1000)
+res = recuit(25, 1000)
 print(res)
