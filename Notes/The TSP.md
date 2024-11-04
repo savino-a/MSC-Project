@@ -1,4 +1,4 @@
-# The Travelling Salesman Problem (TSP)
+# The Travelling Salesman Problem (TSP):
 
 ## Description
 The aim of solving the TSP is, given a map containing different cities, to find the shortest path to visit all cities and return to the initial city. We usually represent this problem by using a graph. Using this representation, the aim of this problem is to find the shortest path that traverses every vertex in the graph once.
@@ -38,3 +38,18 @@ We have, in green the brute solution that goes through all of the possibilites a
 The brute solution gives use a minimum distance of 144 whilst the SA method gives us a minimum of 174 which is pretty good considering the simplicity of my implementation.
 
 ### Quantum Resolution
+
+In the same as for our optimal acceleration/deceleration problem we will use QAOA to translate our problem for it to be solvable by a quantum computer. The constraints on the Hamiltonian are:
+```math
+\sum_i x_{i,p} = 1 \ \forall p \\
+\sum_p x_{i,p} = 1 \ \forall i
+```
+As a node can only be gone through once and only one node is visited at a specific step p.
+We also have a penalty that applies when two nodes visited consecutively are not directly linked:
+```math
+\sum_{(i,j) \notin E} \sum_p x_{i,p} \times x_{j,p+1} > 0
+```
+Assuming we get back to the initial point at the end of the Hamiltonian, the cost function is given by:
+```math
+C(x)= \sum_{i,j} w_{i,j} \sum_p x_{i,p} x_{j,p+1}
+```

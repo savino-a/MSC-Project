@@ -88,7 +88,11 @@ We then consider a system with N discrete time-steps the $i^{th}$ time step havi
  We consider a solution being an  $x\in \left\{00,01,10,11\right\} ^N$
 
 #### **Defining the cost function**
-We use a constant energy model, why hypothesises the fact that the energy needed to go from one speed to another is always constant.
+We use a constant energy model, why hypothesises the fact that the energy needed to go from one speed to another is always constant. We also consider that the efficiency $\eta$ is proportional to the ratio of the average velocity (between initial and final speed) up to a constant C, ie. $\eta =C \times \frac{v_{avg,i}}{\Delta v_i}$.
+And with:
+```math
+E_{i+1} = \frac{1}{2 \eta}  (v_{i+1}^2 - v_i^2) = \frac{1}{2 \eta} \Delta v_i \ v_{avg,i}
+```
 
 ##### *Without braking regeneration*
 Our cost function is:
