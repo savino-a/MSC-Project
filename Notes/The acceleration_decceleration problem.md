@@ -114,7 +114,7 @@ As explained earlier, QUBO problems are unconstrained, we therefore have to turn
 ##### *No simultaneous braking and acceleration*
 Our train cannot accelerate and brake at the same time, we therefore apply a penalty when both our bits are 1.
 ```math
-P_1= \lambda _1 \ [\sum_{i=1}^{N}   x_{i,a} - x_{i,b}]^2
+P_1= \lambda _1 \ \sum_{i=1}^{N}   x_{i,a} \times x_{i,b}
 ```
 As we want to force that value towards 0.
 
@@ -135,7 +135,7 @@ As we want to force that value towards 0.
 ##### *Maximum Speed Constraint*
 The last contraint we have to respect is a maximum speed constraint.
 ```math
-P_4= \lambda_4 \ max(0 \ ;\Delta v \times \sum_{i=1}^N x_{i,b} - v_{max})
+P_4= \lambda_4 \ [(\Delta v \times \sum_{i=1}^N x_{i,b}) - v_{max}]^2
 ```
 **Where $\lambda _i$ are multipliers used to accentuate the importance of these penalties.**
 
@@ -143,5 +143,5 @@ P_4= \lambda_4 \ max(0 \ ;\Delta v \times \sum_{i=1}^N x_{i,b} - v_{max})
 
 We want to minimise:
 ```math
-E(x)= \sum_{i=1}^{N} (\Delta v^2 \times x_{i,a} - \alpha\times\Delta v^2 \times x_{i,b}) +  \lambda _1\sum_{i=1}^{N}   x_{i,a} \times x_{i,b} + \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,a} - (N-i)\Delta v \times x_{i,b})-D] \ ^2 \lambda_3 \ [\sum_{i=1}^{N} (x_{i,a}-x_{i,b})] \ ^2
+E(x)= \Delta v^2 \sum_{i=1}^{N} ( x_{i,a} - \alpha \ x_{i,b}) +  \lambda _1\sum_{i=1}^{N}   x_{i,a} \times x_{i,b} + \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,a} - (N-i)\Delta v \times x_{i,b})-D] \ ^2 +\lambda_3 \ [\sum_{i=1}^{N} (x_{i,a}-x_{i,b})] \ ^2 + \lambda_4 [(\Delta v \sum_{i=1}^N x_{i,b}) - v_{max}]^2
 ```
