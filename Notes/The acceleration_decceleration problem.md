@@ -121,7 +121,7 @@ As we want to force that value towards 0.
 ##### *Distance constraint*
 Another constraint we have to respect is that we have to have arrived at our destination, therefore having only gone through a distance of D.
 ```math
-P_2= \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,a} - (N-i)\Delta v \times x_{i,b})-D] \ ^2
+P_2= \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,b} - (N-i)\Delta v \times x_{i,a})-D] \ ^2
 ```
 As we want to force our distance towards D.
 
