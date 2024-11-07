@@ -27,7 +27,7 @@ v(t) =
 \begin{cases} 
 at & \text{for } 0 < t < t_1 \\ 
 v_{\text{max}} & \text{for } t_1 < t < t_2 \\ 
-v_{\text{max}} - (t - t_1) a' & \text{for } t_2 < t < T 
+v_{\text{max}} - (t - t_2) a' & \text{for } t_2 < t < T 
 \end{cases}
 ```
 ![Plot1](../Illustrations/newplot.png)
@@ -91,19 +91,19 @@ We then consider a system with N discrete time-steps the $i^{th}$ time step havi
 We use a constant energy model, why hypothesises the fact that the energy needed to go from one speed to another is always constant. We also consider that the efficiency $\eta$ is proportional to the ratio of the average velocity (between initial and final speed) up to a constant C, ie. $\eta =C \times \frac{v_{avg,i}}{\Delta v_i}$.
 And with:
 ```math
-E_{i+1} = \frac{1}{2 \eta}  (v_{i+1}^2 - v_i^2) = \frac{1}{2 \eta} \Delta v_i \ v_{avg,i}
+E_{i+1} = \frac{1}{2 \eta}  (v_{i+1}^2 - v_i^2) = \frac{1}{\eta} \Delta v_i \ v_{avg,i}
 ```
 
 ##### *Without braking regeneration*
 Our cost function is:
 ```math
-E(x)= \sum_{i=1}^{N} (\Delta v^2 \times x_{i,a})
+E(x)= \sum_{i=1}^{N} (\Delta v^2 \times x_{i,b})
 ```
 
 ##### *With braking regeneration*
 Our cost function is:
 ```math
-E(x)= \sum_{i=1}^{N} (\Delta v^2 \times x_{i,a} - \alpha\times\Delta v^2 \times x_{i,b})
+E(x)= \sum_{i=1}^{N} (\Delta v^2 \times x_{i,b} - \alpha\times\Delta v^2 \times x_{i,a})
 ```
 Where $\alpha$ is the efficiency of the energy recuperation system.
 
@@ -114,29 +114,34 @@ As explained earlier, QUBO problems are unconstrained, we therefore have to turn
 ##### *No simultaneous braking and acceleration*
 Our train cannot accelerate and brake at the same time, we therefore apply a penalty when both our bits are 1.
 ```math
-P_1= \lambda _1\sum_{i=1}^{N}   x_{i,a} \times x_{i,b}
+P_1= \lambda _1 \ \sum_{i=1}^{N}   x_{i,a} \times x_{i,b}
 ```
 As we want to force that value towards 0.
 
 ##### *Distance constraint*
 Another constraint we have to respect is that we have to have arrived at our destination, therefore having only gone through a distance of D.
 ```math
-P_2= \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,a} - (N-i)\Delta v \times x_{i,b})-D] \ ^2
+P_2= \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,b} - (N-i)\Delta v \times x_{i,a})-D] \ ^2
 ```
 As we want to force our distance towards D.
 
 ##### *Net-Zero speed constraint*
-The last constraint we have to respect is that we have to have stopped at our destination therefore braking as many times as we have accelerated.
+Another constraint we have to respect is that we have to have stopped at our destination therefore braking as many times as we have accelerated.
 ```math
 P_3= \lambda_3 \ [\sum_{i=1}^{N} (x_{i,a}-x_{i,b})] \ ^2
 ```
 As we want to force that value towards 0.
 
+##### *Maximum Speed Constraint*
+The last contraint we have to respect is a maximum speed constraint.
+```math
+P_4= \lambda_4 \ [(\Delta v \times \sum_{i=1}^N x_{i,b}) - v_{max}]^2
+```
 **Where $\lambda _i$ are multipliers used to accentuate the importance of these penalties.**
 
 ### The final QUBO problem
 
 We want to minimise:
 ```math
-E(x)= \sum_{i=1}^{N} (\Delta v^2 \times x_{i,a} - \alpha\times\Delta v^2 \times x_{i,b}) +  \lambda _1\sum_{i=1}^{N}   x_{i,a} \times x_{i,b} + \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,a} - (N-i) + \lambda_3 \ [\sum_{i=1}^{N} (x_{i,a}-x_{i,b})] \ ^2
+E(x)= \Delta v^2 \sum_{i=1}^{N} ( x_{i,a} - \alpha \ x_{i,b}) +  \lambda _1\sum_{i=1}^{N}   x_{i,a} \times x_{i,b} + \lambda _2 \ [\sum_{i=1}^{N} ((N-i)\Delta v \times x_{i,a} - (N-i)\Delta v \times x_{i,b})-D] \ ^2 +\lambda_3 \ [\sum_{i=1}^{N} (x_{i,a}-x_{i,b})] \ ^2 + \lambda_4 [(\Delta v \sum_{i=1}^N x_{i,b}) - v_{max}]^2
 ```
