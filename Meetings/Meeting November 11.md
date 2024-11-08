@@ -1,0 +1,2 @@
+- Solve without QUBO by linearizing the first contraint (Big-M).
+- Add a time contraint
