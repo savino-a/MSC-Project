@@ -20,6 +20,16 @@ from docplex.mp.model import Model
 import Convoy_example1
 from Convoy_example1 import Convoy1
 
+delta_v = Convoy1.delta_vs
+speeds = Convoy1.speeds
+
+
+def find_closest_acceleration(speeds, v):
+    # Find the index of the speed closest to v
+    closest_index = min(range(len(speeds)), key=lambda i: abs(speeds[i] - v))
+    return delta_v[closest_index]
+
+
 opt_model = Model(name="MIP Model")
 
 Nc = 40
@@ -62,7 +72,11 @@ for i in range(0, Nc):
 objective = opt_model.linear_expr()
 ## objective is the hamiltonian/energy value we want to minimize
 ## Energy:
+velocity = 0
 for i in range(0, Nc):
+    delta_v_acc = find_closest_acceleration(speeds, velocity)
+    velocity = velocity + delta_v_acc * x[i] - delta_v_decc * y[i]
+    delta_v_acc = find_closest_acceleration(speeds, velocity)
     objective += (delta_v_acc**2) * x[i] - alpha * (delta_v_decc**2) * y[i]
     # objective += (delta_v**2)*x[i]
 
@@ -106,6 +120,7 @@ Constraint 2: (Total Distance constraint)
 distance = opt_model.linear_expr()
 velocity = 0
 for i in range(0, Nc):
+    delta_v_acc = find_closest_acceleration(speeds, velocity)
     velocity = velocity + delta_v_acc * x[i] - delta_v_decc * y[i]
     distance += velocity
 opt_model.add_constraint(distance == Dist, "Distance_constraint")
@@ -118,20 +133,32 @@ opt_model.add_constraint(distance == Dist, "Distance_constraint")
 Constraint 3: (Net-Zero contraint)
 
 """
-opt_model.add_constraint(
+velocity = opt_model.linear_expr()
+for i in range(0, Nc):
+    delta_v_acc = find_closest_acceleration(speeds, velocity)
+    velocity += delta_v_acc * x[i] - delta_v_decc * y[i]
+opt_model.add_constraint(velocity == 0, "Net_Zero_constraint")
+
+"""opt_model.add_constraint(
     opt_model.sum((y[i] * delta_v_decc - delta_v_acc * x[i]) for i in range(0, Nc))
     == 0,
     "Net_Zero_constraint",
-)
+)"""
 
 """
 Constraint 4: (Maximum Speed)
 
 """
-opt_model.add_constraint(
+max_velocity = opt_model.linear_expr()
+for i in range(0, Nc):
+    delta_v_acc = find_closest_acceleration(speeds, velocity)
+    max_velocity += delta_v_acc * x[i]
+opt_model.add_constraint(max_velocity <= Convoy1.calculate_vmax(), "vmax_constraint")
+
+"""opt_model.add_constraint(
     opt_model.sum((delta_v_acc * x[i]) for i in range(0, Nc)) <= vmax,
     "Maximum_Speed_constraint",
-)
+)"""
 
 
 #### Print the optimization model

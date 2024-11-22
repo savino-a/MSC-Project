@@ -40,12 +40,13 @@ class Wagon:
 
 
 class Locomotive:
-    def __init__(self, Pnom, Mloco, Ne, efficiency=0.85):
+    def __init__(self, Pnom, Mloco, Ne, efficiency=0.85, k=1.1):
         self.Pnom = Pnom
         self.Mloco = Mloco  # tonnes
         self.Mtot = Mloco
         self.Ne = Ne
         self.efficiency = efficiency
+        self.k = k
 
     def RAV(self, v):  # v  in m/s
         v = v * 3.6  # v in km/h
@@ -60,7 +61,7 @@ class Locomotive:
     def delta_v(self, v1):  # v1 in m/s
         Pav = self.Pavailable(v1)
         delta_t = 1  # 1 sec steps
-        v2 = math.sqrt((2 / ((self.Mtot) * 1000)) * Pav * delta_t + v1**2)
+        v2 = math.sqrt((2 / ((self.k * self.Mtot) * 1000)) * Pav * delta_t + v1**2)
         return v2 - v1  # delta_v in m/s^2
 
     def calculate_vmax(self):
@@ -113,8 +114,9 @@ class Convoy(Locomotive):
             return vmax_approx / 3.6  # m /s
 
 
-def acceleration_profile(self, verbose=0):
-    speed = np.arange(0, self.calculate_vmax(), 0.5)
+def acceleration_profile(self, n=1000, verbose=0):
+    step = self.calculate_vmax() / n
+    speed = np.arange(0, self.calculate_vmax(), step)
     delta_v_loco = []
     delta_v_convoy = []
     Pavailable_loco = []
