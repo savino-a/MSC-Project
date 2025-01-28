@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import os
 from random import random
 from random import randint
-import plotly.graph_objs as go
+
+"""import plotly.graph_objs as go
 import plotly.offline as pyo
-import plotly.express as px
+import plotly.express as px"""
 import pandas as pd
 
 
@@ -520,5 +521,5 @@ def recuit(N, t):
     return (circ, dmin, dbr)
 
 
-res = recuit(25, 1000)
+res = recuit(20, 1000)
 print(res)
