@@ -62,6 +62,8 @@ We therefore add the constraints:
 - $ \sum_{i=0}^{N_c} v_i \le D+tol  $
 - $ \sum_{i=0}^{N_c} v_i \ge D-tol  $
 
+We can simplify this contraint, in reality, it is:
+$$ \Delta v \sum_{j=0}^{N_c} \sum_{i=0}^j (x[i]-y[i]) = \Delta v \sum_{i=0}^{N_c} (N_c - i +1) (x[i]-y[i]) $$
 #### Constraint 3: Net-Zero constraint
 
 We also want our train to be stopped when arriving, therefore, we add the constraint:
