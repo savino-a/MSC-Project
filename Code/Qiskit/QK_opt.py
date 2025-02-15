@@ -45,6 +45,21 @@ def to_bitstring(integer, num_bits):
     return [int(digit) for digit in result]
 
 
+def distance(delta_v, x, y, Nc):
+    velocity = 0
+    vel = [0]
+    dist = [0]
+    dist_tot = 0
+    for i in range(0, Nc):
+        velocity = velocity + delta_v * (x[i] - y[i])
+        if velocity < 0:
+            velocity = -velocity
+        vel.append(velocity)
+        dist_tot += velocity
+        dist.append(dist_tot)
+    return dist, vel
+
+
 class Qiskit_Problem:
     def __init__(self, N, D, vmax, delta_v=1, alpha=0.5, dist_tolerance=1, p=2):
         self.mip = Model(name="MIP Model")
@@ -154,12 +169,16 @@ class Qiskit_Problem:
         self.circuit.measure_all()
         self.num_qubits = self.circuit.num_qubits
 
-    def _solve_(self, backend=AerSimulator(), tol=1e-3, method="COBYLA", shots=1000):
+    def _solve_(
+        self, backend=AerSimulator(), tol=1e-3, method="COBYLA", shots=1000, plot=False
+    ):
         print("Chosen backend is :" + str(backend))
         self._transpile_circuit_(backend)
         self._optimize_circuit_(backend, tol, method, shots)
         self._get_results_(backend, shots)
         self._post_process_()
+        if plot:
+            self._visualization_()
 
     def _transpile_circuit_(self, backend):
         pm = generate_preset_pass_manager(optimization_level=3, backend=backend)
@@ -243,7 +262,39 @@ class Qiskit_Problem:
         most_likely_bitstring.reverse()
         self.solution = most_likely_bitstring
         print(self.solution)
+        self.x_value = most_likely_bitstring[0 : self.N]
+        self.y_value = most_likely_bitstring[self.N : 2 * self.N]
+
+    def _visualization_(self):
+        time = np.arange(self.N + 1)
+        distn, velo = distance(self.delta_v, self.x_value, self.y_value, self.N)
+
+        # Visualize speed:
+        plt.figure(figsize=(15, 8))
+        matplotlib.rcParams.update({"font.size": 15})
+        plt.plot(
+            time, velo, c="b", marker="o", markersize=2, linestyle="-"
+        )  # , label='label)
+        plt.xlabel("Time")
+        plt.ylabel("Velocity")
+        plt.title("Velocity vs Time")
+        plt.grid(axis="x")
+        plt.grid(axis="y")
+        plt.legend()
+        plt.show()
+
+        # Visualize Distance:
+        plt.figure(figsize=(10, 6))
+        matplotlib.rcParams.update({"font.size": 15})
+        plt.plot(
+            time, distn, c="b", marker="o", markersize=1, linestyle="-"
+        )  # , label='label')
+        plt.xlabel("Time")
+        plt.ylabel("Distance")
+        plt.title("Distance vs Time")
+        plt.legend()
+        plt.show()
 
 
 qi_pb = Qiskit_Problem(N=3, D=1, vmax=1)
-qi_pb._solve_()
+qi_pb._solve_(plot=True)
