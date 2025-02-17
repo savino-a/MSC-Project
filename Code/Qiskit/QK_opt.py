@@ -107,6 +107,14 @@ class Qiskit_Problem:
             distance += velocity
         self.mip.add_constraint(distance == self.D, "Distance_constraint")
 
+    def _distance_constraint_trapeze_strict(self, Nc, delta_v):
+        distance = self.mip.linear_expr()
+        velocity = 0
+        for i in range(0, Nc):
+            velocity = velocity + delta_v * (self.x[i] - self.y[i])
+            distance += velocity + 0.5 * delta_v * (self.x[i] - self.y[i])
+        self.mip.add_constraint(distance == self.D, "Distance_constraint_trapeze")
+
     def _distance_constraint(self, Nc, delta_v, tolerance):
         distance = self.mip.linear_expr()
         velocity = 0

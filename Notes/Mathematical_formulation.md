@@ -49,21 +49,41 @@ We can remove the second constraint, $z[i]$ being binary.
 
 #### Constraint 2: Total Distance constraints
 
+##### Method 1:
 We want our train to travel a distance $D \pm tol $.
 
 For each step, we define the velocity at step $j$ as being:
 $$ v_j = \sum_{i=0}^j (x[i]-y[i])(\Delta v) $$
 
 And the final distance as being:
-$$ D_{travelled} = \sum_{i=0}^{N_c} v_i $$
+$$ D_{travelled} = \sum_{i=0}^{N_c-1} v_i $$
 
 We therefore add the constraints:
 
-- $ \sum_{i=0}^{N_c} v_i \le D+tol  $
-- $ \sum_{i=0}^{N_c} v_i \ge D-tol  $
+- $ \sum_{i=0}^{N_c-1} v_i \le D+tol  $
+- $ \sum_{i=0}^{N_c-1} v_i \ge D-tol  $
 
 We can simplify this contraint, in reality, it is:
-$$ \Delta v \sum_{j=0}^{N_c} \sum_{i=0}^j (x[i]-y[i]) = \Delta v \sum_{i=0}^{N_c} (N_c - i +1) (x[i]-y[i]) $$
+$$ \Delta v \sum_{j=0}^{N_c-1} \sum_{i=0}^j (x[i]-y[i]) = \Delta v \sum_{i=0}^{N_c-1} (N_c - i) (x[i]-y[i]) $$
+
+##### Method 2: Trapeze
+![Plot1](./Illustrations/Trapeze_Illu.jpeg)
+
+Let $D_{i}$ be the distance travelled during $[i,i+1]$:
+We have:
+$$ D_{i} = 1 \times (v_i + \frac{1}{2} \Delta v (x_i-y_i) )    $$
+
+Therefore:
+$$ D_{travelled} = \sum_{i=0}^{N_c-1} (v_i + \frac12 \Delta v (x_i-y_i)) = \Delta v [\sum_{i=0}^{N_c-1} \sum_{j=0}^{i} (x_j-y_j) + \frac12 \sum_{i=0}^{N_c-1} (x_i-y_i)] $$
+
+We have:
+$$\sum_{i=0}^{N_c-1} \sum_{j=0}^{i} (x_j-y_j) = \sum_{i=0}^{N_c -1} (N_c - i)(x_i-y_i) \ \ \ \ cf. \ previous \ constraint $$
+
+Therefore:
+$$ D_{travelled} = \Delta v \sum_{i=0}^{N_c-1} (x_i-y_i)(N_c - i + \frac12)    $$
+
+We then add a constraint on $D_{travelled}$
+
 #### Constraint 3: Net-Zero constraint
 
 We also want our train to be stopped when arriving, therefore, we add the constraint:

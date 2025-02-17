@@ -29,7 +29,7 @@ class DWave_Problem:
             self.bqm.add_variable(f"z_{i:03d}", 0)
 
     def _define_constraints(self):
-        self._distance_constraint(self.N, self.delta_v)
+        self._distance_trapeze_constraint(self.N, self.delta_v)
         self._net_zero_constraint(self.N)
         self._vmax_constraint(self.N, self.vmax)
         self._simu_acc_decc_constraint_linear()
@@ -75,6 +75,19 @@ class DWave_Problem:
 
         termss = [(f"x_{i:03d}", (N - i) * delta_v) for i in range(self.N)] + [
             (f"y_{i:03d}", -(N - i) * delta_v) for i in range(self.N)
+        ]
+
+        self.bqm.add_linear_equality_constraint(
+            terms=termss,
+            constant=-self.D,
+            lagrange_multiplier=lagrange_multiplier,
+        )
+
+    def _distance_trapeze_constraint(self, N, delta_v):
+        lagrange_multiplier = 100
+
+        termss = [(f"x_{i:03d}", (N - i + 0.5) * delta_v) for i in range(self.N)] + [
+            (f"y_{i:03d}", -(N - i + 0.5) * delta_v) for i in range(self.N)
         ]
 
         self.bqm.add_linear_equality_constraint(
