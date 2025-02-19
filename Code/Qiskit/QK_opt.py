@@ -1,4 +1,3 @@
-import unittest
 import qiskit
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_optimization import QuadraticProgram
@@ -167,7 +166,10 @@ class Qiskit_Problem:
         print(self.mip.prettyprint())
 
     def _convert_(self):
-        self.qp_quad = from_docplex_mp(self.mip)
+        try:
+            self.qp_quad = from_docplex_mp(self.mip)
+        except Exception:
+            self.qp_quad = self.mip.to_quadratic_program()
         conv = QuadraticProgramToQubo()
         self.qubo = conv.convert(self.qp_quad)
         self.qubitOp, self.offset = self.qubo.to_ising()
@@ -302,7 +304,3 @@ class Qiskit_Problem:
         plt.title("Distance vs Time")
         plt.legend()
         plt.show()
-
-
-qi_pb = Qiskit_Problem(N=3, D=1, vmax=1)
-qi_pb._solve_(plot=True)

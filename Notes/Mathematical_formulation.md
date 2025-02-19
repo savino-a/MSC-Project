@@ -81,7 +81,8 @@ $$\sum_{i=0}^{N_c-1} \sum_{j=0}^{i} (x_j-y_j) = \sum_{i=0}^{N_c -1} (N_c - i)(x_
 
 Therefore:
 $$ D_{travelled} = \Delta v \sum_{i=0}^{N_c-1} (x_i-y_i)(N_c - i + \frac12)    $$
-
+Or if $\Delta v_{acc} \ne \Delta v_{decc}$:
+$$ D_{travelled} = \Delta v _{acc} \sum_{i=0}^{N_c-1} x_i \ (N_c - i + \frac12) - \Delta v_{decc} \sum_{i=0}^{N_c-1} y_i \ (N_c - i + \frac12)    $$
 We then add a constraint on $D_{travelled}$
 
 #### Constraint 3: Net-Zero constraint
