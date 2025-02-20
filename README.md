@@ -8,6 +8,8 @@ The code folder contains various programs I have written such as:
 - Cplex problem optimization
 - Simulated annealing programs
 - Various useful functions
+- D-Wave problem optimization
+- Qiksit problem optimization
 
 ### Illustrations
 
