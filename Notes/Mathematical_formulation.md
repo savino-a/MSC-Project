@@ -2,32 +2,75 @@
 
 ## Formulating our optimization problem
 
+### Problem definition
+
+The objective of the problem is to minimize the amount of energy used by a train to go from point A to point B. In order to do this we must figure out the optimal time when the train should be accelerating, coasting or braking.
+
+### Defining a solution
+We must firstly start by discretising our problem. We cut up our time interval  into $N_c$ pieces. We then consider our three possible states for each step encoded into two bits $x_i \ y_i$, where:
+
+```math
+
+v_{i+1} = 
+\begin{cases} 
+v_i & \text{if }  x_i \ y_i=00 \\
+v_i + \Delta v & \text{if }  x_i \ y_i =10 \\
+v_i - \Delta v & \text{if }  x_i \ y_i =01 \\
+v_i & \text{if }  x_i \ y_i =11 \\
+\end{cases}
+```
+Where $\Delta v = v_{i+1}-v_i \ \forall i$ 
+
+We therefore consider a system with $N_c$ discrete time-steps the $i^{th}$ time step having a corresponding two-bit decision variable $x_{i}$;$y_{i}$. 
+
+ We consider a solution being an  $xy\in \left\{00,01,10,11\right\} ^N$
+
 ### Variables:
 
-Nc binaries $x[i]$ where $x[i]=1$ when we are accelerating at time segment i
+Nc binaries $x_i$ where $x_i=1$ when we are accelerating at time segment i
 
-Nc binaries $y[i]$ where $y[i]=1$ when we are braking at time segment i
+Nc binaries $y_i$ where $y_i=1$ when we are braking at time segment i
 
-Nc binaries $z[i]$ used to linearize constraint
+Nc binaries $z_i$ used to linearize a constraint
 
-### Objective function:
+### Cost function:
 
-
-
+#### Constant energy model:
+We use a constant energy model, which supposes that the energy needed to go from one speed to another is always constant. We also consider that the efficiency $\eta$ is proportional to the ratio of the average velocity (between initial and final speed) up to a constant C, ie. $\eta =C \times \frac{v_{avg,i}}{\Delta v_i}$.
+And with:
+```math
+E_{i+1} = \frac{1}{2 \eta}  (v_{i+1}^2 - v_i^2) = \frac{1}{\eta} \Delta v_i \ v_{avg,i}
+```
 
 We consider that the energy cost from accelerating is worth $(\Delta v)^2$ where $\Delta v$ is our train's acceleration during a time segment.
 
 We consider that the energy we get back from regenerative braking is worth: $\alpha (\Delta v)^2$ where $\alpha$ is the efficiency.
 
 Therefore, our objective function is:
-$$Objective(N_c) = \sum_{i \in [0,N_c]} (x[i]  - y[i] \alpha) (\Delta v)^2  $$
+$$Objective(N_c) = \sum_{i \in [0,N_c]} (x_i  - y_i \alpha) (\Delta v)^2  $$
+
+#### Efficiency function:
+
+We introduce an efficiency function $\eta$ that will represent the electrical efficiency of a train. We model $\eta$ as a step-wise approximate function, where at step $i$:
+$$ \eta_i = \eta_0 - \Delta \eta \sum_{j=0}^i (x_j-y_j) \in [0;1]   $$
+Where, $\eta_0$ is the baseline efficiency and $\Delta\eta$ represents the efficiency change per velocity increment. Here have $-\Delta \eta \sum ...$ because as the efficiency increases, our cost should decrease.
+
+Remember, we have:
+$$E_i={\eta}_i \ \Delta v_i \ v_{avg,i}$$
+Here, our effiency $\eta$ is at the numerator as it is a decreasing function. By supposing that $v_{avg,i} \approx v_i$ and that $\forall i: \ \Delta v_i = \Delta v$, we get:
+$$E_i = \eta_i \ \Delta v \ v_i = (\eta_0 - \Delta \eta \sum_{j=0}^i (x_j-y_j))\Delta v (\sum_{j=0}^i (x_j-y_j)\Delta v)  $$
+Therefore:
+
+$$ Objective(N_c) = \sum_{i=0}^{N_c} E_i = \Delta v^2 [(\eta_0 \sum_{i=0}^{N_c}  \sum_{j=0}^{i} (x_j-y_j)) - (\Delta \eta \sum_{i=0}^{N_c} (\sum_{j=0}^{i} (x_j-y_j))^2)]     $$
+We can simplify this into:
+$$ Objective(N_c) = \Delta v^2 [(\eta_0\sum_{i=0}^{N_c} (N-i)(x_i-y_i)) - (\Delta \eta \sum_{i=0}^{N_c} (\sum_{j=0}^{i} (x_j-y_j))^2) ] = \Delta v [O_{lin}(N_c) + O_{quad}(N_c)]    $$
 
 ### Constraints:
 
 #### Constraint 1: Simultaneous braking/acceleration
 
 We want to force our train to be either accelerating or braking, to do this we want to impose the constraint:
-$$\forall i \in [0,N_c] \ , \ x[i] \times y[i] = 0 $$
+$$\forall i \in [0,N_c] \ , \ x_i \times y_i = 0 $$
 However, this constraint formulation is quadratic and non-convex, we will therefore linearize it.
 
 Generally, if we want to deal with constraining $z=xy$ where $x$ is binary and $y$ is bounded ($L \le y \le U$), we can create a variable $z$ and add the constraints:
@@ -40,12 +83,12 @@ And then constraint $z$.
 
 In our case, $L=0$ and $U=1$, therefore we add the constraints:
 $\forall i \in [0,Nc]:$
-- $z[i] \le x[i]$
-- $z[i] \ge 0$
-- $z[i] \le y[i]$
-- $z[i] \ge x[i] + y[i] - 1$
+- $z_i \le x_i$
+- $z_i \ge 0$
+- $z_i \le y_i$
+- $z_i \ge x_i + y_i - 1$
 
-We can remove the second constraint, $z[i]$ being binary.
+We can remove the second constraint, $z_i$ being binary.
 
 #### Constraint 2: Total Distance constraints
 
@@ -53,7 +96,7 @@ We can remove the second constraint, $z[i]$ being binary.
 We want our train to travel a distance $D \pm tol $.
 
 For each step, we define the velocity at step $j$ as being:
-$$ v_j = \sum_{i=0}^j (x[i]-y[i])(\Delta v) $$
+$$ v_j = \sum_{i=0}^j (x_i-y_i)(\Delta v) $$
 
 And the final distance as being:
 $$ D_{travelled} = \sum_{i=0}^{N_c-1} v_i $$
@@ -64,7 +107,7 @@ We therefore add the constraints:
 - $ \sum_{i=0}^{N_c-1} v_i \ge D-tol  $
 
 We can simplify this contraint, in reality, it is:
-$$ \Delta v \sum_{j=0}^{N_c-1} \sum_{i=0}^j (x[i]-y[i]) = \Delta v \sum_{i=0}^{N_c-1} (N_c - i) (x[i]-y[i]) $$
+$$ \Delta v \sum_{j=0}^{N_c-1} \sum_{i=0}^j (x_i-y_i) = \Delta v \sum_{i=0}^{N_c-1} (N_c - i) (x_i-y_i) $$
 
 ##### Method 2: Trapeze
 ![Plot1](./Illustrations/Trapeze_Illu.jpeg)
@@ -88,7 +131,7 @@ We then add a constraint on $D_{travelled}$
 #### Constraint 3: Net-Zero constraint
 
 We also want our train to be stopped when arriving, therefore, we add the constraint:
-- $ v_{N_c}= \sum_{i=0}^{N_c} (x[i]-y[i])(\Delta v) = 0$
+- $ v_{N_c}= \sum_{i=0}^{N_c} (x_i-y_i)(\Delta v) = 0$
 
 #### Constraint 4: Maximum speed constraint
 
@@ -97,7 +140,7 @@ $\forall i \in [0,N_c]:$
 - $v_i \le v_{max}  $
 
 We can simplify this constraint, because we don't have different speed limits on our track. We therefore only add the constraint:
-- $ \sum_{i=0}^{N_c} x[i] \ \Delta v \le v_{max} $
+- $ \sum_{i=0}^{N_c} x_i \ \Delta v \le v_{max} $
   
 This works because the optimal trajectory will try to reach the maximum speed and then start braking for arrival.
 
@@ -124,7 +167,7 @@ We, however do not need to do this as the QUBO conversion takes care of both typ
 In order to run our optimization problem on quantum hardware, we have to input an unconstrained problem. For this, we will convert our constraints (equality) to penalties.
 
 We can write all of our constraints as : 
-$$ h(x,y,z) = \sum_{i=0}^{N_c} (a_i x[i] + b_i y[i] + c_i y[i]) - b =0  $$
+$$ h(x,y,z) = \sum_{i=0}^{N_c} (a_i x_i + b_i y_i + c_i y_i) - b =0  $$
 
 We define a penalty term and add it to the objective function: 
 $$ Penalty= \lambda (h(x,y,z))^2 $$
@@ -137,7 +180,7 @@ $$ minimize:  \ x^T Q x = \sum_{i,j=1}^n Q_{i,j} x_i x_j  $$
 
 ### Converting our QUBO problem to an Ising Hamiltonian
 
-From this QUBO, we will need to extract the Ising Hamiltonian which is done by applying the transformation: $x \rightarrow \frac{\sigma + 1}{2} $. Where the $x[i]$ binary variables are turned to spin variables $\in \{ -1,+1 \}$
+From this QUBO, we will need to extract the Ising Hamiltonian which is done by applying the transformation: $x \rightarrow \frac{\sigma + 1}{2} $. Where the $x_i$ binary variables are turned to spin variables $\in \{ -1,+1 \}$
 
 The Ising Hamiltonian is defined as: 
  $$ H(\sigma) = \sum_{i,j} J_{i,j} \sigma_i \sigma_j + \sum_i h_i \sigma_i  $$

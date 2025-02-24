@@ -60,17 +60,23 @@ def distance(delta_v, x, y, Nc):
 
 
 class Qiskit_Problem:
-    def __init__(self, N, D, vmax, delta_v=1, alpha=0.5, dist_tolerance=1, p=2):
+    def __init__(
+        self, N, D, vmax, delta_v=1, alpha=0.5, dist_tolerance=1, p=2, eff=False
+    ):
         self.mip = Model(name="MIP Model")
         self.N = N
         self.delta_v = delta_v
         self.vmax = vmax
-        self.D = D
+        self.D = D + 1
         self.alpha = alpha
+        self.eff = eff
         self.dist_tolerance = 1
         self.p = p
         self._define_variables()
-        self._define_cost()
+        if self.eff:
+            self._define_cost_efficiency()
+        else:
+            self._define_cost()
         self._define_constraints()
         self._convert_()
         self._circuit_()
@@ -88,6 +94,16 @@ class Qiskit_Problem:
             objective += (self.delta_v**2) * self.x[i] - self.alpha * (
                 self.delta_v**2
             ) * self.y[i]
+        self.mip.minimize(objective)
+
+    def _define_cost_efficiency(self):
+        objective = self.mip.linear_expr()
+        for i in range(0, self.N):
+            objective += self.delta_v**2 * (self.N - i) * (self.x[i] - self.y[i])
+            sub_objective = self.mip.linear_expr()
+            for j in range(0, i):
+                sub_objective += self.delta_v**2 * -0.001 * (self.x[j] - self.y[j])
+        objective += sub_objective**2
         self.mip.minimize(objective)
 
     def _define_constraints(self):
@@ -304,3 +320,7 @@ class Qiskit_Problem:
         plt.title("Distance vs Time")
         plt.legend()
         plt.show()
+
+
+pb = Qiskit_Problem(N=5, D=2, vmax=1)
+pb._solve_(plot=True)

@@ -2,7 +2,7 @@
 
 ## Objective
 
-The objective of the problem is to minimize the amount of energy used by a train to move from point A to point B. In order to do this we must figure the optimal time when the train should be accelerating, coasting or braking.
+The objective of the problem is to minimize the amount of energy used by a train to move from point A to point B. In order to do this we must figure out the optimal time when the train should be accelerating, coasting or braking.
 
 ## First formulation
 
