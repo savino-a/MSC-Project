@@ -12,13 +12,13 @@ import seaborn as sns
 
 
 class DWave_Problem:
-    def __init__(self, N, D, vmax, delta_v=1, alpha=0.05,eff=False,trap=False):
+    def __init__(self, N, D, vmax, delta_v=1, alpha=0.05, eff=False, trap=False):
         self.bqm = BinaryQuadraticModel("BINARY")
         self.N = N
         self.delta_v = delta_v
         self.vmax = vmax
-        self.trap=trap
-        self.eff=eff
+        self.trap = trap
+        self.eff = eff
         self.D = D
         self.alpha = alpha
         if self.eff:
@@ -32,7 +32,7 @@ class DWave_Problem:
             self.bqm.add_variable(f"x_{i:03d}", self.delta_v**2)
             self.bqm.add_variable(f"y_{i:03d}", -self.alpha * (self.delta_v**2))
             self.bqm.add_variable(f"z_{i:03d}", 0)
-    
+
     def _define_cost_efficiency(self):
         # Initialize the objective function
         objective = {}
@@ -65,7 +65,7 @@ class DWave_Problem:
         if self.trap:
             self._distance_trapeze_constraint(self.N, self.delta_v)
         else:
-            self._distance_constraint(self.N,self.delta_v)
+            self._distance_constraint(self.N, self.delta_v)
         self._net_zero_constraint(self.N)
         self._vmax_constraint(self.N, self.vmax)
         self._simu_acc_decc_constraint_linear()
@@ -185,19 +185,19 @@ class DWave_Problem:
         x = []
         y = []
         velocity = [0]
-        d=0
-        self.distance=[0]
+        d = 0
+        self.distance = [0]
 
         for i in range(0, self.N):
             x.append(self.best_sample["x_" + ((str(i))).zfill(3)])
             y.append(self.best_sample["y_" + ((str(i))).zfill(3)])
             velocity.append(velocity[i] + ((x[i] - y[i]) * self.delta_v))
         print(x, y)
-        self.velocity=velocity
+        self.velocity = velocity
         for i in range(0, self.N):
             d += velocity[i]
             self.distance.append(d)
-        
+
         # Plot velocity changes
         sns.lineplot(
             x=range(self.N + 1),
@@ -206,11 +206,11 @@ class DWave_Problem:
             color="b",  # Change color to blue
             markersize=8,  # Increase marker size
             label="Velocity",
-            ax=ax1
+            ax=ax1,
         )
         ax1.set_xlabel("Step", fontsize=14)  # Increase font size for labels
         ax1.set_ylabel("Velocity", fontsize=14, color="b")
-        ax1.tick_params(axis='y', labelcolor="b")
+        ax1.tick_params(axis="y", labelcolor="b")
         ax1.legend(loc="upper left", fontsize=12)  # Increase font size for legend
         ax1.grid(True, linestyle="--", alpha=0.7)  # Add grid lines with custom style
 
@@ -223,10 +223,10 @@ class DWave_Problem:
             color="r",  # Change color to red
             markersize=8,  # Increase marker size
             label="Distance",
-            ax=ax2
+            ax=ax2,
         )
         ax2.set_ylabel("Distance", fontsize=14, color="r")
-        ax2.tick_params(axis='y', labelcolor="r")
+        ax2.tick_params(axis="y", labelcolor="r")
         ax2.legend(loc="upper right", fontsize=12)  # Increase font size for legend
 
         plt.title(
