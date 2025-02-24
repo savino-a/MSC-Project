@@ -8,14 +8,14 @@ We are trying to model the $\Delta v(v)$ or acceleration(v) of a train as approx
 F_{wheel} = F_{resistance} + F_{weight} + F_{curves} + F_{acceleration}
 ```
 ```math
-F_{wheel} = RAV + \frac{M_sg}{1000}i + \frac{M_sg}{1000} \frac{800}{\rho} 
+F_{wheel} = RAV + \frac{M_sg}{1000}i + \frac{M_sg}{1000} \frac{800}{\rho} + F_{acceleration}
 ```
 For now, we will suppose that:
 - The track is perfectly straight and flat, not taking into consideration the loss from the curvature of the track and weight of the train.
 - The departure and arrival points are at the same altitude, ignoring the potential energy losses.
 
 We therefore have:
-$$ F_{wheel} = RAV
+$$ F_{wheel} = RAV + F_{acceleration}$$
 
 ### **The RAV losses:**
 

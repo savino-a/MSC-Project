@@ -1,4 +1,3 @@
-import unittest
 import qiskit
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_optimization import QuadraticProgram
@@ -45,19 +44,40 @@ def to_bitstring(integer, num_bits):
     return [int(digit) for digit in result]
 
 
+def distance(delta_v, x, y, Nc):
+    velocity = 0
+    vel = [0]
+    dist = [0]
+    dist_tot = 0
+    for i in range(0, Nc):
+        velocity = velocity + delta_v * (x[i] - y[i])
+        if velocity < 0:
+            velocity = -velocity
+        vel.append(velocity)
+        dist_tot += velocity
+        dist.append(dist_tot)
+    return dist, vel
+
+
 class Qiskit_Problem:
-    def __init__(self, N, D, vmax, delta_v=1, alpha=0.5, dist_tolerance=1, p=2):
+    def __init__(
+        self, N, D, vmax, delta_v=1, alpha=0.5, dist_tolerance=1, p=2, eff=False
+    ):
         self.mip = Model(name="MIP Model")
         self.N = N
         self.delta_v = delta_v
         self.vmax = vmax
-        self.D = D
+        self.D = D + 1
         self.alpha = alpha
+        self.eff = eff
         self.dist_tolerance = 1
         self.p = p
         self.tsppb = False
         self._define_variables()
-        self._define_cost()
+        if self.eff:
+            self._define_cost_efficiency()
+        else:
+            self._define_cost()
         self._define_constraints()
         self._convert_()
         self._circuit_()
@@ -78,6 +98,16 @@ class Qiskit_Problem:
             ) * self.y[i]
         self.mip.minimize(objective)
 
+    def _define_cost_efficiency(self):
+        objective = self.mip.linear_expr()
+        for i in range(0, self.N):
+            objective += self.delta_v**2 * (self.N - i) * (self.x[i] - self.y[i])
+            sub_objective = self.mip.linear_expr()
+            for j in range(0, i):
+                sub_objective += self.delta_v**2 * -0.001 * (self.x[j] - self.y[j])
+        objective += sub_objective**2
+        self.mip.minimize(objective)
+
     def _define_constraints(self):
         self._distance_constraint_strict(self.N, self.delta_v)
         """self._distance_constraint(self.N, self.delta_v, self.dist_tolerance)"""
@@ -93,6 +123,14 @@ class Qiskit_Problem:
             velocity = velocity + delta_v * (self.x[i] - self.y[i])
             distance += velocity
         self.mip.add_constraint(distance == self.D, "Distance_constraint")
+
+    def _distance_constraint_trapeze_strict(self, Nc, delta_v):
+        distance = self.mip.linear_expr()
+        velocity = 0
+        for i in range(0, Nc):
+            velocity = velocity + delta_v * (self.x[i] - self.y[i])
+            distance += velocity + 0.5 * delta_v * (self.x[i] - self.y[i])
+        self.mip.add_constraint(distance == self.D, "Distance_constraint_trapeze")
 
     def _distance_constraint(self, Nc, delta_v, tolerance):
         distance = self.mip.linear_expr()
@@ -150,6 +188,10 @@ class Qiskit_Problem:
             self.qp_quad = self.mip.to_quadratic_program()
         else:
             self.qp_quad = from_docplex_mp(self.mip)
+        try:
+            self.qp_quad = from_docplex_mp(self.mip)
+        except Exception:
+            self.qp_quad = self.mip.to_quadratic_program()
         conv = QuadraticProgramToQubo()
         self.qubo = conv.convert(self.qp_quad)
         self.qubitOp, self.offset = self.qubo.to_ising()
@@ -159,12 +201,16 @@ class Qiskit_Problem:
         self.circuit.measure_all()
         self.num_qubits = self.circuit.num_qubits
 
-    def _solve_(self, backend=AerSimulator(), tol=1e-3, method="COBYLA", shots=1000):
+    def _solve_(
+        self, backend=AerSimulator(), tol=1e-3, method="COBYLA", shots=1000, plot=False
+    ):
         print("Chosen backend is :" + str(backend))
         self._transpile_circuit_(backend)
         self._optimize_circuit_(backend, tol, method, shots)
         self._get_results_(backend, shots)
         self._post_process_()
+        if plot:
+            self._visualization_()
 
     def _transpile_circuit_(self, backend):
         pm = generate_preset_pass_manager(optimization_level=3, backend=backend)
@@ -249,7 +295,46 @@ class Qiskit_Problem:
         self.solution = most_likely_bitstring
         print(self.solution)
 
+    def _visualization_(self):
+        time = np.arange(self.N + 1)
+        distn, velo = distance(self.delta_v, self.x_value, self.y_value, self.N)
+
+        # Visualize speed:
+        plt.figure(figsize=(15, 8))
+        matplotlib.rcParams.update({"font.size": 15})
+        plt.plot(
+            time, velo, c="b", marker="o", markersize=2, linestyle="-"
+        )  # , label='label)
+        plt.xlabel("Time")
+        plt.ylabel("Velocity")
+        plt.title("Velocity vs Time")
+        plt.grid(axis="x")
+        plt.grid(axis="y")
+        plt.legend()
+        plt.show()
+
+        # Visualize Distance:
+        plt.figure(figsize=(10, 6))
+        matplotlib.rcParams.update({"font.size": 15})
+        plt.plot(
+            time, distn, c="b", marker="o", markersize=1, linestyle="-"
+        )  # , label='label')
+        plt.xlabel("Time")
+        plt.ylabel("Distance")
+        plt.title("Distance vs Time")
+        plt.legend()
+        plt.show()
+        self.x_value = most_likely_bitstring[0 : self.N]
+        self.y_value = most_likely_bitstring[self.N : 2 * self.N]
+
+
+pb = Qiskit_Problem(N=5, D=2, vmax=1)
+pb._solve_(plot=True)
+
 
 
 qi_pb = Qiskit_Problem(N=3, D=1, vmax=1,p=2)
 qi_pb._solve_()
+        
+
+

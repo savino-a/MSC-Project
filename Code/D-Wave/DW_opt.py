@@ -8,6 +8,7 @@ from dwave.system.samplers import LeapHybridSampler
 from dwave.system.samplers import DWaveSampler
 from dwave.system.composites import EmbeddingComposite
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class DWave_Problem:
@@ -28,7 +29,7 @@ class DWave_Problem:
             self.bqm.add_variable(f"z_{i:03d}", 0)
 
     def _define_constraints(self):
-        self._distance_constraint(self.N, self.delta_v)
+        self._distance_trapeze_constraint(self.N, self.delta_v)
         self._net_zero_constraint(self.N)
         self._vmax_constraint(self.N, self.vmax)
         self._simu_acc_decc_constraint_linear()
@@ -41,25 +42,25 @@ class DWave_Problem:
             y_var = f"y_{i:03d}"
 
             self.bqm.add_linear_inequality_constraint(
-                {z_var: 1, x_var: -1},
+                terms=[((z_var, 1)), ((x_var), -1)],
                 constant=0,
                 lagrange_multiplier=lagrange_multiplier,
-                label="z_1",
+                label="z_1" + str(i),
             )
             self.bqm.add_linear_inequality_constraint(
-                {z_var: 1, y_var: -1},
+                terms=[(z_var, 1), (y_var, -1)],
                 constant=0,
                 lagrange_multiplier=lagrange_multiplier,
-                label="z_2",
+                label="z_2" + str(i),
             )
             self.bqm.add_linear_inequality_constraint(
-                {z_var: -1, x_var: +1, y_var: +1},
+                terms=[(z_var, -1), (x_var, +1), (y_var, +1)],
                 constant=-1,
                 lagrange_multiplier=lagrange_multiplier,
-                label="z_3",
+                label="z_3" + str(i),
             )
 
-        z_vars = {f"z_{i:03d}": 1 for i in range(self.N)}
+        z_vars = [(f"z_{i:03d}", 1) for i in range(self.N)]
 
         # Add constraint that sum of all z variables equals 0
         self.bqm.add_linear_equality_constraint(
@@ -74,6 +75,19 @@ class DWave_Problem:
 
         termss = [(f"x_{i:03d}", (N - i) * delta_v) for i in range(self.N)] + [
             (f"y_{i:03d}", -(N - i) * delta_v) for i in range(self.N)
+        ]
+
+        self.bqm.add_linear_equality_constraint(
+            terms=termss,
+            constant=-self.D,
+            lagrange_multiplier=lagrange_multiplier,
+        )
+
+    def _distance_trapeze_constraint(self, N, delta_v):
+        lagrange_multiplier = 100
+
+        termss = [(f"x_{i:03d}", (N - i + 0.5) * delta_v) for i in range(self.N)] + [
+            (f"y_{i:03d}", -(N - i + 0.5) * delta_v) for i in range(self.N)
         ]
 
         self.bqm.add_linear_equality_constraint(
@@ -128,8 +142,8 @@ class DWave_Problem:
             self._plot_velocity_changes()
 
     def _plot_velocity_changes(self) -> None:
-
-        plt.figure(figsize=(10, 6))
+        sns.set(style="whitegrid")
+        plt.figure(figsize=(12, 8))
 
         # Time steps are defined by the length of the solution vector divided by 2 ( since 2 bits per time step )
         x = []
@@ -140,20 +154,22 @@ class DWave_Problem:
             x.append(self.best_sample["x_" + ((str(i))).zfill(3)])
             y.append(self.best_sample["y_" + ((str(i))).zfill(3)])
             velocity.append(velocity[i] + ((x[i] - y[i]) * self.delta_v))
-
-        plt.plot(
-            range(self.N + 1),
-            velocity,
-            label=f" Velocity ",
-            marker="o",
-            color="r",
-            markersize=4,
+        print(x, y)
+        sns.lineplot(
+            x=range(self.N + 1),
+            y=velocity,
+            marker="o",  # Change marker style
+            color="b",  # Change color to blue
+            markersize=8,  # Increase marker size
+            label="Velocity",
         )
-        plt.title(" Velocity vs Time ")
-        plt.xlabel(" Time Step ")
-        plt.ylabel(" Velocity ( m / s ) ")
-        plt.legend()
-        plt.grid(True)
+        plt.title(
+            "Velocity Changes Over Time", fontsize=16
+        )  # Add a more descriptive title
+        plt.xlabel("Step", fontsize=14)  # Increase font size for labels
+        plt.ylabel("Velocity", fontsize=14)
+        plt.legend(fontsize=12)  # Increase font size for legend
+        plt.grid(True, linestyle="--", alpha=0.7)  # Add grid lines with custom style
         plt.show()
 
 
