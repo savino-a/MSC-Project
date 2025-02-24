@@ -72,6 +72,7 @@ class Qiskit_Problem:
         self.eff = eff
         self.dist_tolerance = 1
         self.p = p
+        self.tsppb = False
         self._define_variables()
         if self.eff:
             self._define_cost_efficiency()
@@ -80,6 +81,7 @@ class Qiskit_Problem:
         self._define_constraints()
         self._convert_()
         self._circuit_()
+        
 
     def _define_variables(self):
         self.x, self.y, self.z = {}, {}, {}
@@ -182,6 +184,10 @@ class Qiskit_Problem:
         print(self.mip.prettyprint())
 
     def _convert_(self):
+        if self.tsppb:
+            self.qp_quad = self.mip.to_quadratic_program()
+        else:
+            self.qp_quad = from_docplex_mp(self.mip)
         try:
             self.qp_quad = from_docplex_mp(self.mip)
         except Exception:
@@ -288,8 +294,6 @@ class Qiskit_Problem:
         most_likely_bitstring.reverse()
         self.solution = most_likely_bitstring
         print(self.solution)
-        self.x_value = most_likely_bitstring[0 : self.N]
-        self.y_value = most_likely_bitstring[self.N : 2 * self.N]
 
     def _visualization_(self):
         time = np.arange(self.N + 1)
@@ -320,7 +324,17 @@ class Qiskit_Problem:
         plt.title("Distance vs Time")
         plt.legend()
         plt.show()
+        self.x_value = most_likely_bitstring[0 : self.N]
+        self.y_value = most_likely_bitstring[self.N : 2 * self.N]
 
 
 pb = Qiskit_Problem(N=5, D=2, vmax=1)
 pb._solve_(plot=True)
+
+
+
+qi_pb = Qiskit_Problem(N=3, D=1, vmax=1,p=2)
+qi_pb._solve_()
+        
+
+
