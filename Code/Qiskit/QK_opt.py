@@ -55,11 +55,13 @@ class Qiskit_Problem:
         self.alpha = alpha
         self.dist_tolerance = 1
         self.p = p
+        self.tsppb = False
         self._define_variables()
         self._define_cost()
         self._define_constraints()
         self._convert_()
         self._circuit_()
+        
 
     def _define_variables(self):
         self.x, self.y, self.z = {}, {}, {}
@@ -144,7 +146,10 @@ class Qiskit_Problem:
         print(self.mip.prettyprint())
 
     def _convert_(self):
-        self.qp_quad = from_docplex_mp(self.mip)
+        if self.tsppb:
+            self.qp_quad = self.mip.to_quadratic_program()
+        else:
+            self.qp_quad = from_docplex_mp(self.mip)
         conv = QuadraticProgramToQubo()
         self.qubo = conv.convert(self.qp_quad)
         self.qubitOp, self.offset = self.qubo.to_ising()
@@ -245,5 +250,6 @@ class Qiskit_Problem:
         print(self.solution)
 
 
-qi_pb = Qiskit_Problem(N=3, D=1, vmax=1)
+
+qi_pb = Qiskit_Problem(N=3, D=1, vmax=1,p=2)
 qi_pb._solve_()
