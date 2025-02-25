@@ -235,5 +235,5 @@ class DWave_Problem:
         plt.show()
 
 
-a = DWave_Problem(N=5, D=2, vmax=3)
+a = DWave_Problem(N=3, D=1, vmax=1, eff=True)
 sol = a.solve(plot=True)

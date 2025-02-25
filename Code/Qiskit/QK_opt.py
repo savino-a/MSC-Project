@@ -81,7 +81,6 @@ class Qiskit_Problem:
         self._define_constraints()
         self._convert_()
         self._circuit_()
-        
 
     def _define_variables(self):
         self.x, self.y, self.z = {}, {}, {}
@@ -200,9 +199,15 @@ class Qiskit_Problem:
         self.circuit = QAOAAnsatz(cost_operator=self.qubitOp, reps=self.p)
         self.circuit.measure_all()
         self.num_qubits = self.circuit.num_qubits
+        print(self.num_qubits)
 
     def _solve_(
-        self, backend=AerSimulator(), tol=1e-3, method="COBYLA", shots=1000, plot=False
+        self,
+        backend=AerSimulator(device="GPU"),
+        tol=1e-3,
+        method="COBYLA",
+        shots=1000,
+        plot=False,
     ):
         print("Chosen backend is :" + str(backend))
         self._transpile_circuit_(backend)
@@ -294,6 +299,8 @@ class Qiskit_Problem:
         most_likely_bitstring.reverse()
         self.solution = most_likely_bitstring
         print(self.solution)
+        self.x_value = most_likely_bitstring[0 : self.N]
+        self.y_value = most_likely_bitstring[self.N : 2 * self.N]
 
     def _visualization_(self):
         time = np.arange(self.N + 1)
@@ -324,17 +331,7 @@ class Qiskit_Problem:
         plt.title("Distance vs Time")
         plt.legend()
         plt.show()
-        self.x_value = most_likely_bitstring[0 : self.N]
-        self.y_value = most_likely_bitstring[self.N : 2 * self.N]
 
 
-pb = Qiskit_Problem(N=5, D=2, vmax=1)
+pb = Qiskit_Problem(N=3, D=1, vmax=1, eff=False, p=1)
 pb._solve_(plot=True)
-
-
-
-qi_pb = Qiskit_Problem(N=3, D=1, vmax=1,p=2)
-qi_pb._solve_()
-        
-
-
