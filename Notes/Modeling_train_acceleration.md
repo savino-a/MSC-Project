@@ -5,17 +5,18 @@ We are trying to model the $\Delta v(v)$ or acceleration(v) of a train as approx
 
 ### **The fundamental law of train dynamics:**
 ```math
-F_{wheel} = F_{resistance} + F_{weight} + F_{curves} + F_{acceleration}
+F_{wheel} = F_{resistance} + F_{weight} + F_{curves} + F_{residual \ acceleration}
 ```
 ```math
-F_{wheel} = RAV + \frac{M_sg}{1000}i + \frac{M_sg}{1000} \frac{800}{\rho} + F_{acceleration}
+F_{wheel} = RAV + \frac{M_sg}{1000}i + \frac{M_sg}{1000} \frac{800}{\rho} + k M_s \gamma
 ```
 For now, we will suppose that:
-- The track is perfectly straight and flat, not taking into consideration the loss from the curvature of the track and weight of the train.
+- The track is perfectly straight and flat, not taking into consideration the loss from the curvature of the track and weight of the train ($i=0$).
 - The departure and arrival points are at the same altitude, ignoring the potential energy losses.
+- We ignore the residual acceleration term
 
 We therefore have:
-$$ F_{wheel} = RAV + F_{acceleration}$$
+$$ F_{wheel} = RAV$$
 
 ### **The RAV losses:**
 
@@ -75,7 +76,7 @@ $v_{i+1}= \sqrt{v_i^2 + \frac2{k M_{static}} \ P_{Available} \ \Delta t}$
 And therefore:
 $$\Delta v = \sqrt{v_i^2 + \frac2{k M_{static}} \ P_{Available} \ \Delta t} - v_i$$
 
-We therefore obtain:
+We therefore obtain (for BB60000 at nominal power):
 <div style="display: flex; justify-content: center; gap: 20px;">
   <img src="../plots/Pavailable(v).png" style="width:45%;"/>
   <img src="../plots/delta_v_v_plot.png" style="width:45%;"/>

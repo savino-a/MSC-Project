@@ -238,3 +238,9 @@ This creates a loop represented by the diagram below.
 ![Plot1](./Illustrations/QAOA-circuit-diagram.png)
 
 Once we've optimized the circuit's parameters, we create the optimized circuit and run it multiple times which gives us our optimal solution.
+
+## First results:
+
+**For N=5 an D=2:**
+<img src="/Illustrations/First_results/v(t)_qiskit.png" style="width:100%;margin-left: auto;margin-right: auto;display:block">
+<img src="/Illustrations/First_results/d(t)_qiskit.png" style="width:100%;margin-left: auto;margin-right: auto;display:block">
