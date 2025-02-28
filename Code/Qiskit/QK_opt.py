@@ -44,6 +44,20 @@ def to_bitstring(integer, num_bits):
     return [int(digit) for digit in result]
 
 
+def to_bitstring(integer, num_bits):
+    result = np.binary_repr(integer, width=num_bits)
+    return [int(digit) for digit in result]
+
+    keys = list(final_distribution_int.keys())
+    values = list(final_distribution_int.values())
+    most_likely = keys[np.argmax(np.abs(values))]
+    most_likely_bitstring = to_bitstring(most_likely, len(graph))
+    """most_likely_bitstring.reverse()"""
+
+    print("Result bitstring:", most_likely_bitstring)
+    return most_likely_bitstring
+
+
 def distance(delta_v, x, y, Nc):
     velocity = 0
     vel = [0]
@@ -51,8 +65,8 @@ def distance(delta_v, x, y, Nc):
     dist_tot = 0
     for i in range(0, Nc):
         velocity = velocity + delta_v * (x[i] - y[i])
-        if velocity < 0:
-            velocity = -velocity
+        """if velocity < 0:
+            velocity = -velocity"""
         vel.append(velocity)
         dist_tot += velocity
         dist.append(dist_tot)
@@ -110,6 +124,7 @@ class Qiskit_Problem:
     def _define_constraints(self):
         self._distance_constraint_strict(self.N, self.delta_v)
         """self._distance_constraint(self.N, self.delta_v, self.dist_tolerance)"""
+        """self._distance_constraint_trapeze_strict(self.N, self.delta_v)"""
         self._net_zero_constraint(self.N)
         self._vmax_constraint(self.N, self.vmax, self.delta_v)
         self._simu_acc_decc_constraint_linear(self.N)
@@ -191,7 +206,7 @@ class Qiskit_Problem:
             self.qp_quad = from_docplex_mp(self.mip)
         except Exception:
             self.qp_quad = self.mip.to_quadratic_program()
-        conv = QuadraticProgramToQubo()
+        conv = QuadraticProgramToQubo(penalty=1000000)
         self.qubo = conv.convert(self.qp_quad)
         self.qubitOp, self.offset = self.qubo.to_ising()
 
@@ -205,10 +220,18 @@ class Qiskit_Problem:
         self,
         backend=AerSimulator(device="GPU"),
         tol=1e-3,
-        method="COBYLA",
+        method="SLSQP",
         shots=1000,
         plot=False,
     ):
+        """QiskitRuntimeService.save_account(
+            channel="ibm_quantum",
+            token="127d9370ab5b85e463bb2aa2196cb842ded206746763d1197bf58b29fa2a34eefcb8651384d8e1ca8e17301293ec53cf9c5dd55acbe12113630dbf575ce497df",
+            set_as_default=True,
+            overwrite=True,
+        )
+        service = QiskitRuntimeService(channel="ibm_quantum")
+        backend = service.least_busy(min_num_qubits=self.num_qubits + 5)"""
         print("Chosen backend is :" + str(backend))
         self._transpile_circuit_(backend)
         self._optimize_circuit_(backend, tol, method, shots)
@@ -234,12 +257,12 @@ class Qiskit_Problem:
             # If using qiskit-ibm-runtime<0.24.0, change `mode=` to `session=`
             estimator = Estimator(mode=session)
             estimator.options.default_shots = shots
-            '''if backend != AerSimulator():
-                # Set simple error suppression/mitigation options, this is for when on quantum hardware
-                estimator.options.dynamical_decoupling.enable = True
-                estimator.options.dynamical_decoupling.sequence_type = "XY4"
-                estimator.options.twirling.enable_gates = True
-                estimator.options.twirling.num_randomizations = "auto"'''
+            """if backend != AerSimulator():
+                # Set simple error suppression/mitigation options, this is for when on quantum hardware"""
+            '''estimator.options.dynamical_decoupling.enable = True
+            estimator.options.dynamical_decoupling.sequence_type = "XY4"
+            estimator.options.twirling.enable_gates = True
+            estimator.options.twirling.num_randomizations = "auto"'''
 
             result = minimize(
                 self._cost_func_estimator_,
@@ -302,6 +325,42 @@ class Qiskit_Problem:
         self.x_value = most_likely_bitstring[0 : self.N]
         self.y_value = most_likely_bitstring[self.N : 2 * self.N]
 
+        self._check_constraints()
+
+    def _check_constraints(self):
+        # Check distance constraint
+        self.resp_constraint = True
+        dist, _ = distance(self.delta_v, self.x_value, self.y_value, self.N)
+        if not (
+            self.D - self.dist_tolerance <= dist[-1] <= self.D + self.dist_tolerance
+        ):
+            print(
+                f"Distance constraint violated: {dist[-1]} not in [{self.D - self.dist_tolerance}, {self.D + self.dist_tolerance}]"
+            )
+            self.resp_constraint = False
+
+        # Check net zero constraint
+        net_zero = sum(self.y_value) - sum(self.x_value)
+        if net_zero != 0:
+            print(f"Net zero constraint violated: {net_zero} != 0")
+        self.resp_constraint = False
+
+        # Check maximum speed constraint
+        max_speed = max(
+            [self.delta_v * (self.x_value[i] - self.y_value[i]) for i in range(self.N)]
+        )
+        if max_speed > self.vmax:
+            print(f"Maximum speed constraint violated: {max_speed} > {self.vmax}")
+            self.resp_constraint = False
+
+        # Check simultaneous acceleration and deceleration constraint
+        for i in range(self.N):
+            if self.x_value[i] * self.y_value[i] != 0:
+                print(
+                    f"Simultaneous acceleration and deceleration constraint violated at index {i}"
+                )
+                self.resp_constraint = False
+
     def _visualization_(self):
         time = np.arange(self.N + 1)
         distn, velo = distance(self.delta_v, self.x_value, self.y_value, self.N)
@@ -317,7 +376,6 @@ class Qiskit_Problem:
         plt.title("Velocity vs Time")
         plt.grid(axis="x")
         plt.grid(axis="y")
-        plt.legend()
         plt.show()
 
         # Visualize Distance:
@@ -329,9 +387,8 @@ class Qiskit_Problem:
         plt.xlabel("Time")
         plt.ylabel("Distance")
         plt.title("Distance vs Time")
-        plt.legend()
         plt.show()
 
 
-pb = Qiskit_Problem(N=3, D=1, vmax=1, eff=False, p=1)
+pb = Qiskit_Problem(N=4, D=2, vmax=1, eff=False, p=1, dist_tolerance=0)
 pb._solve_(plot=True)
