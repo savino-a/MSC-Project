@@ -216,7 +216,7 @@ These are single-qubit $R_X$ rotations.
 
 We start by intializing all qubits to the state: $ \ket{+} = \frac{\ket{0} + \ket{1}}{\sqrt{2}} $
 By applying a Hadamard gate to all qubits, this gives us:
-$$ \ket{+}^{\otimes n} = \frac{1}{\sqrt{2^n}} \sum_z \ket{z}  $$$$ \gamma_i = \frac{x_i \times max(F_T(v_i)) - Av_i^2 - Bv_i - C}{k M_s}   $$
+$$ \ket{+}^{\otimes n} = \frac{1}{\sqrt{2^n}} \sum_z \ket{z}  $$
 
 ### Problem definition
 
@@ -243,7 +243,8 @@ max(F_T(v)) = \begin{cases}
 -881.3 v + 2.704e+5 \ \ \ if \ v \in [50;60] \ kph \\
 -0.05265 v^3 + 28.78 v^2 - 5603 v + 4.566e+5 \ \ \ if \ v \in [60;220] \ kph
 \end{cases}
-```$$ \gamma_i = \frac{x_i \times max(F_T(v_i)) - Av_i^2 - Bv_i - C}{k M_s}   $$
+```
+
 
 ```math
 max(F_B(v)) = \begin{cases}
@@ -262,6 +263,7 @@ We now apply **the fundamental law of train dynamics:**
 ```math
 F_{wheel} = F_{resistance} + F_{weight} + F_{curves} + F_{acceleration}
 ```
+And
 ```math
 F_{wheel} = RAV + \frac{M_sg}{1000}i + \frac{M_sg}{1000} \frac{800}{\rho} + F_{acceleration}
 ```
@@ -304,3 +306,7 @@ $$ D = \sum_0^{N_c} D_i = \Delta T \sum_0^{N_c} (v_i + \frac{\gamma_i}{2}) $$
 We want our train to be stopped, so at a speed of 0 on arrival.
 
 This means $v_{N_c} = 0$ which we can also write as: $\sum_i^{N_c} \gamma_i = 0$ since our time step length is constant.
+
+### First results
+
+![Plot4](./Illustrations/Figure_1.png)
