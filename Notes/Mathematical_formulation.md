@@ -218,7 +218,9 @@ We start by intializing all qubits to the state: $ \ket{+} = \frac{\ket{0} + \ke
 By applying a Hadamard gate to all qubits, this gives us:
 $$ \ket{+}^{\otimes n} = \frac{1}{\sqrt{2^n}} \sum_z \ket{z}  $$
 
-### Problem definition
+# Integer formulation
+
+## Problem definition
 
 We now move away from binary variables towards integer variables that will be able to represent a stronger or weaker acceleration/deceleration of our train.
 
