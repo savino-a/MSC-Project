@@ -1,4 +1,4 @@
-# Mathematical formulation
+# Binary formulation
 
 ## Formulating our optimization problem
 
@@ -174,10 +174,7 @@ $$ Penalty= \lambda (h(x,y,z))^2 $$
 By default, $\lambda$ is defined by $ \lambda = 10 \times max(\text{absolute coefficient in objective function})  $
 
 We therefore apply this to all of our constraints and our problem becomes unconstrained.
-
-Once all of our constraints are transformed to penalties, we are left with a QUBO problem of the form:
-$$ minimize:  \ x^T Q x = \sum_{i,j=1}^n Q_{i,j} x_i x_j  $$
-
+\sum_0^{N_c}
 ### Converting our QUBO problem to an Ising Hamiltonian
 
 From this QUBO, we will need to extract the Ising Hamiltonian which is done by applying the transformation: $x \rightarrow \frac{\sigma + 1}{2} $. Where the $x_i$ binary variables are turned to spin variables $\in \{ -1,+1 \}$
@@ -221,26 +218,95 @@ We start by intializing all qubits to the state: $ \ket{+} = \frac{\ket{0} + \ke
 By applying a Hadamard gate to all qubits, this gives us:
 $$ \ket{+}^{\otimes n} = \frac{1}{\sqrt{2^n}} \sum_z \ket{z}  $$
 
-We then apply the cost Hamiltonian $U_C(\gamma)$ followed by the mixer Hamiltonian $U_M(\beta)$
+### Problem definition
 
-We do this p times for p the number of layers which also corresponds to the amount of circuit parameters we are going to optimize.
-Therefore, we have:
-$$ \ket{\psi(\gamma,\beta)} = \prod_{j=1}^p (U_M (\beta_j) \ U_C(\gamma_j)) \ \ket{+}^{\otimes n}  $$
+We now move away from binary variables towards integer variables that will be able to represent a stronger or weaker acceleration/deceleration of our train.
 
-At the end, we measure the final quantum state in the computational basis. We do this multiple times to find an average value. This gives us the expected value of the cost Hamiltonian.
+Once again we start by descritising our time space into $N_c$ time steps. For every step $i$ we must find an integer $x_i \in [-1;1]$ which corresponds to the demand of the conductor.
+```math
+Where:\begin{cases}
+x_i \le 0 \text{ corresponds to the conductor braking with a force of } x_i \times max(F_B(v_i)) \\
+x_i \ge 0 \text{ corresponds to the conductor accelerating with a force of } x_i \times max(F_T(v_i))
+\end{cases}
+```
+That minimizes the total power consumption of the train along its journey.
 
-We then try to optimize classically $\beta \ and \ \gamma$ in order to minimize:
+### Modelising the acceleration/braking force
 
-$$ \braket{H_C} =  \ket{\psi(\gamma,\beta)} H_C \bra{\psi(\gamma,\beta)} $$
+In order to modelize the maximum braking and acceleration forces of the train at a certain speed, we will use the tables given by Alstom and approximate them by polynomials. We have:
+![Plot3](./Illustrations/Force_table.png)
 
-This creates a loop represented by the diagram below.
+Which we approximate by:
+```math
+max(F_T(v)) = \begin{cases}
+-354.1 v + 2.44e+5 \ \ \ if \ v \in [0;50] \ kph \\
+-881.3 v + 2.704e+5 \ \ \ if \ v \in [50;60] \ kph \\
+-0.05265 v^3 + 28.78 v^2 - 5603 v + 4.566e+5 \ \ \ if \ v \in [60;220] \ kph
+\end{cases}
+```
 
-![Plot1](./Illustrations/QAOA-circuit-diagram.png)
 
-Once we've optimized the circuit's parameters, we create the optimized circuit and run it multiple times which gives us our optimal solution.
+```math
+max(F_B(v)) = \begin{cases}
+9925 v + 1.243 \ \ \ if \ v \in [0;20] \ kph \\
+2.039e-13 v + 1.985e+5 \ \ \ if \ v \in [20;100] \ kph \\
+5.389 v^2 - 2583 v + 4.012e+5 \ \ \ if \ v \in [100;220] \ kph 
+\end{cases}
+```
+We then multiply these maximum forces by the demand to find our applied force.
 
-## First results:
+### Modelising the acceleration
 
-**For N=5 an D=2:**
-<img src="/Illustrations/First_results/v(t)_qiskit.png" style="width:100%;margin-left: auto;margin-right: auto;display:block">
-<img src="/Illustrations/First_results/d(t)_qiskit.png" style="width:100%;margin-left: auto;margin-right: auto;display:block">
+We now have the force applied to the rails of the train but must now figure out the acceleration of our train.
+
+We now apply **the fundamental law of train dynamics:**
+```math
+F_{wheel} = F_{resistance} + F_{weight} + F_{curves} + F_{acceleration}
+```
+And
+```math
+F_{wheel} = RAV + \frac{M_sg}{1000}i + \frac{M_sg}{1000} \frac{800}{\rho} + F_{acceleration}
+```
+For now, we will suppose that:
+- The track is perfectly straight and flat, not taking into consideration the loss from the curvature of the track and weight of the train.
+- The departure and arrival points are at the same altitude, ignoring the potential energy losses.
+
+We therefore have:
+$$ F_{wheel} = RAV + F_{acceleration}$$
+
+```math
+Where: \begin{cases} RAV = A v^2 + B v + C \\
+F_{acceleration} = M_s \ k \ \gamma \ \text{ , where: } \begin{cases} k: \text{ a coefficient representing the rotation mass} \\ \gamma: \text{the acceleration in } m/s^2 \end{cases}
+\end{cases}
+```
+We therefore have, for acceleration: ${F_{i}} = x_i \times max(F_T(v_i))  = RAV +F_{acceleration}$. Which gives us:
+$$ \gamma_i = \frac{x_i \times max(F_T(v_i)) - Av_i^2 - Bv_i - C}{k M_s}   $$
+
+In the same way, for braking:
+$$ \gamma_i = \frac{x_i \times max(F_B(v_i)) + Av_i^2 + Bv_i + C}{k M_s}   $$
+
+And: $v_{i+1} = v_i + \gamma_i \Delta T$
+
+In order to enforce our speed limit, we write: $v_{i+1} = min(v_{max} \ , \ v_i + \gamma_i \Delta T)$
+### Cost function
+
+In order to modelize the cost function or energy consumption, we once again, use Alstom's $C(demand,V)$ table. We then build a function to approximate these tables. We end up with:
+
+$$ C = \frac{P_{max}}{max(C)} (1-e^{\frac{V}{max(V) + 0.001}}) \times tanh(100 \ demand) \times (1-e^{\frac{|demand|}{max(demand) + 0.001}  }) $$
+
+### Constraints
+
+#### Distance constraint
+
+We want the train to have travelled a specific distance D after its $N_c$ time steps. We have:
+$$ D = \sum_0^{N_c} D_i = \Delta T \sum_0^{N_c} (v_i + \frac{\gamma_i}{2}) $$
+
+#### Net-zero constraint
+
+We want our train to be stopped, so at a speed of 0 on arrival.
+
+This means $v_{N_c} = 0$ which we can also write as: $\sum_i^{N_c} \gamma_i = 0$ since our time step length is constant.
+
+### First results
+
+![Plot4](./Illustrations/Figure_1.png)
