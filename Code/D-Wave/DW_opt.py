@@ -170,7 +170,7 @@ class DWave_Problem:
 
     def solve_with_LEAP(self, plot=False):
         sampler = LeapHybridSampler()
-        sampler_set = sampler.sample(self.bqm)
+        sample_set = sampler.sample(self.bqm)
         self.best_sample = sample_set.first.sample
         self.best_energy = sample_set.first.energy
         self.solution_vector = list(self.best_sample.values())
@@ -235,5 +235,5 @@ class DWave_Problem:
         plt.show()
 
 
-a = DWave_Problem(N=3, D=1, vmax=1, eff=True)
-sol = a.solve(plot=True)
+a = DWave_Problem(N=10, D=5, vmax=2, eff=True)
+sol = a.solve_with_LEAP(plot=True)
