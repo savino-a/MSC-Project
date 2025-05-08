@@ -173,7 +173,7 @@ problem = Alstom_Problem(A, B, C, m, v_max=v_max, p_max=p_max)
 D = 100  # Example distance
 
 # Initial guess for the demand list
-initial_demand_list = np.ones(50)  # Example initial guess
+initial_demand_list = np.ones(200)  # Example initial guess
 
 # Define bounds for the demand list
 bounds = [(-1, 1) for _ in range(len(initial_demand_list))]
