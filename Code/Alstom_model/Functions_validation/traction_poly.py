@@ -17,7 +17,7 @@ def f(v):
 
 # Interval [a, b] and degree n
 a, b = 0, 250
-n = 2
+n = 1
 
 # Choose n+1 interpolation points
 x_points = np.linspace(a, b, 1000)
@@ -30,6 +30,8 @@ coeffs = np.polyfit(x_points, y_points_bis, deg=n)
 
 # Create polynomial function
 p = np.poly1d(coeffs)
+
+print(f"Coefficients of the F_traction polynomial: {coeffs}")
 
 
 def acc_pos(v, demand=1):

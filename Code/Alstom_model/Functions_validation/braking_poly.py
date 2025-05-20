@@ -28,6 +28,8 @@ for x in x_points:
 # Get the polynomial coefficients (highest degree first)
 coeffs = np.polyfit(x_points, y_points_bis, deg=n)
 
+print(f"Coefficients of the F_braking polynomial: {coeffs}")
+
 # Create polynomial function
 p = np.poly1d(coeffs)
 
@@ -42,8 +44,8 @@ def acc_neg(v, demand=1):
 
 a_x, b_x = 0, 250
 a_y, b_y = -1, 1
-n = 2  # degree in x
-m = 2  # degree in y
+n = 1  # degree in x
+m = 1  # degree in y
 
 # Create the interpolation points (equally spaced)
 x_points = np.linspace(a_x, b_x, 1000)
@@ -77,6 +79,8 @@ def Pdecc(x, y):
             idx += 1
     return val
 
+
+print(f"Coefficients of the power polynomial: {coeffs}")
 
 # Plotting
 x_plot = x_points

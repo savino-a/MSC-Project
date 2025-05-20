@@ -48,6 +48,8 @@ A = np.vstack([(x_flat**i) * (y_flat**j) for i in range(n + 1) for j in range(m 
 b = Z.ravel()
 coeffs, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
 
+print(f"Coefficients of the polynomial: {coeffs}")
+
 
 # Define the polynomial function
 def P(x, y):

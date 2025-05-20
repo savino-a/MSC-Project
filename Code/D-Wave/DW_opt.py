@@ -2,6 +2,7 @@ import dimod
 from dimod.binary_quadratic_model import BinaryQuadraticModel
 import numpy
 import neal
+import numpy as np
 from neal import SimulatedAnnealingSampler
 import dwave
 from dwave.system.samplers import LeapHybridSampler
@@ -76,7 +77,7 @@ class DWave_Problem:
         self._vmin_constraint(self.N)
 
     def _simu_acc_decc_constraint_linear(self):
-        lagrange_multiplier = 100
+        lagrange_multiplier = 1000
         for i in range(self.N):
             z_var = f"z_{i:03d}"
             x_var = f"x_{i:03d}"
@@ -112,7 +113,7 @@ class DWave_Problem:
         print("")
 
     def _distance_constraint(self, N, delta_v):
-        lagrange_multiplier = 100
+        lagrange_multiplier = 1000
 
         termss = [(f"x_{i:03d}", (N - i) * delta_v) for i in range(self.N)] + [
             (f"y_{i:03d}", -(N - i) * delta_v) for i in range(self.N)
@@ -125,7 +126,7 @@ class DWave_Problem:
         )
 
     def _distance_constraint_tol(self, N, delta_v):
-        lagrange_multiplier = 1000
+        lagrange_multiplier = 10000
 
         termss = [(f"x_{i:03d}", (N - i) * delta_v) for i in range(self.N)] + [
             (f"y_{i:03d}", -(N - i) * delta_v) for i in range(self.N)
@@ -148,7 +149,7 @@ class DWave_Problem:
         )
 
     def _distance_trapeze_constraint(self, N, delta_v):
-        lagrange_multiplier = 100
+        lagrange_multiplier = 1000
 
         termss = [(f"x_{i:03d}", (N - i + 0.5) * delta_v) for i in range(self.N)] + [
             (f"y_{i:03d}", -(N - i + 0.5) * delta_v) for i in range(self.N)
@@ -161,7 +162,7 @@ class DWave_Problem:
         )
 
     def _net_zero_constraint(self, N):
-        lagrange_multiplier = 100
+        lagrange_multiplier = 1000
 
         termss = [(f"x_{i:03d}", 1) for i in range(self.N)] + [
             (f"y_{i:03d}", -1) for i in range(self.N)
@@ -173,8 +174,8 @@ class DWave_Problem:
             lagrange_multiplier=lagrange_multiplier,
         )
 
-    def _vmax_constraint(self, N, vmax):
-        lagrange_multiplier = 100
+    """def _vmax_constraint(self, N, vmax):
+        lagrange_multiplier = 1000
 
         termss = [(f"x_{i:03d}", self.delta_v) for i in range(N)]
         self.bqm.add_linear_inequality_constraint(
@@ -182,10 +183,24 @@ class DWave_Problem:
             constant=-vmax,
             lagrange_multiplier=lagrange_multiplier,
             label="Vmax_constraint",
-        )
+        )"""
 
-    def _vmin_constraint(self, N):
+    def _vmax_constraint(self, N, vmax):
         lagrange_multiplier = 1000
+
+        for i in range(N):
+            terms = [(f"x_{j:03d}", self.delta_v) for j in range(i + 1)] + [
+                (f"y_{j:03d}", -self.delta_v) for j in range(i + 1)
+            ]
+            self.bqm.add_linear_inequality_constraint(
+                terms=terms,
+                constant=-vmax,
+                lagrange_multiplier=lagrange_multiplier,
+                label=f"Vmax_constraint_{i}",
+            )
+
+    """def _vmin_constraint(self, N):
+        lagrange_multiplier = 10000
 
         termss = [(f"x_{i:03d}", self.delta_v) for i in range(N)]
         self.bqm.add_linear_inequality_constraint(
@@ -193,7 +208,21 @@ class DWave_Problem:
             constant=0,
             lagrange_multiplier=lagrange_multiplier,
             label="Vmax_constraint",
-        )
+        )"""
+
+    def _vmin_constraint(self, N):
+        lagrange_multiplier = 1000
+
+        for i in range(N):
+            terms = [(f"x_{j:03d}", self.delta_v) for j in range(i + 1)] + [
+                (f"y_{j:03d}", -self.delta_v) for j in range(i + 1)
+            ]
+            self.bqm.add_linear_inequality_constraint(
+                terms=terms,
+                constant=0,
+                lagrange_multiplier=lagrange_multiplier,
+                label=f"Vmin_constraint_{i}",
+            )
 
     def solve(self, plot=False):
 
@@ -206,6 +235,7 @@ class DWave_Problem:
         return self.best_sample
 
     def solve_with_LEAP(self, plot=False):
+        """sampleset = LeapHybridBQMSampler().sample(bqmodel, time_limit=120)"""
         sampler = LeapHybridSampler()
         sample_set = sampler.sample(self.bqm)
         self.best_sample = sample_set.first.sample
@@ -220,14 +250,15 @@ class DWave_Problem:
         # Time steps are defined by the length of the solution vector divided by 2 ( since 2 bits per time step )
         x = []
         y = []
-        velocity = [0]
-        d = 0
-        self.distance = [0]
-
+        velocity = [np.float64(0)]
+        d = np.float64(0)
+        self.distance = [np.float64(0)]
+        self.cost = np.float64(0)
         for i in range(0, self.N):
             x.append(self.best_sample["x_" + ((str(i))).zfill(3)])
             y.append(self.best_sample["y_" + ((str(i))).zfill(3)])
             velocity.append(velocity[i] + ((x[i] - y[i]) * self.delta_v))
+            self.cost += self.delta_v * (x[i] - y[i])
         self.velocity = velocity
         for i in range(0, self.N):
             d += velocity[i]
@@ -283,9 +314,9 @@ SA_max_speed = []
 Dwave_time = []
 SA_time = []
 
-for i in range(10):
+for i in range(5):
     print(f"Iteration {i}")
-    a = DWave_Problem(N=20, D=40, vmax=5, eff=True)
+    a = DWave_Problem(N=50, D=150, vmax=4, eff=True)
     start_time = time.time()
     sol = a.solve_with_LEAP(plot=False)
     end_time = time.time()

@@ -11,6 +11,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import random
 from math import sqrt
+import time
+
+
+def read_coords(path):
+    coords = []
+    with open(path, "r") as f:
+        for line in f.readlines():
+            line = [float(x.replace("\n", "")) for x in line.split(" ")]
+            coords.append(line)
+    return coords
+
+
+random.seed(42)
 
 
 class TSP_DWave_Problem:
@@ -29,11 +42,14 @@ class TSP_DWave_Problem:
 
     def _build_cities(self):
         self.city_coords = []
+        coords = read_coords("/home/maop7/Github/MSC-Project/Code/TSP/coords.txt")
+        print(len(coords))
         for i in range(self.N):
-            x = random.random()
-            y = random.random()
+            """x = random.random()
+            y = random.random()"""
+            [x, y] = coords[i]
             self.city_coords.append((x, y))
-        print(self.city_coords)
+        """print(self.city_coords)"""
 
     def _build_distance_matrix(self):
         self.dist = []
@@ -99,11 +115,15 @@ class TSP_DWave_Problem:
     def solve(self, plot=False):
 
         sampler = SimulatedAnnealingSampler()
+        start = time.time()
         sample_set = sampler.sample(self.bqm, num_reads=8192, num_sweeps=8192)
+        end = time.time()
+        self.time = end - start
         self.best_sample = sample_set.first.sample
         self.best_energy = sample_set.first.energy
         self.solution_vector = list(self.best_sample.values())
         self.extract_tour()
+        self.calculate_tour_distance()
         if plot:
             self.plot_sol()
         else:
@@ -112,16 +132,29 @@ class TSP_DWave_Problem:
 
     def solve_with_LEAP(self, plot=False):
         sampler = LeapHybridSampler()
+        start = time.time()
         sample_set = sampler.sample(self.bqm)
+        end = time.time()
+        self.time = end - start
         self.best_sample = sample_set.first.sample
         self.best_energy = sample_set.first.energy
         self.solution_vector = list(self.best_sample.values())
         self.extract_tour()
+        self.calculate_tour_distance()
         if plot:
             self.plot_sol()
         else:
-            print(self.best_sample)
-            print(self.tour)
+            """print(self.best_sample)
+            print(self.tour)"""
+
+    def calculate_tour_distance(self):
+        """Calculate the total distance of the tour."""
+        total_distance = 0
+        for i in range(self.N):
+            city_i = self.tour[i]
+            city_j = self.tour[(i + 1) % self.N]
+            total_distance += self.dist[city_i][city_j]
+        self.total_distance = total_distance
 
     def plot_sol(self):
         """Plot the cities and the tour"""
@@ -149,11 +182,21 @@ class TSP_DWave_Problem:
                 "r-",
             )
 
-        plt.title(f"TSP Solution for {self.N} cities - Energy: {self.best_energy:.2f}")
+        plt.title(f"TSP Solution for {self.N} cities")
         plt.grid(True)
         plt.show()
 
 
+times = []
+distances = []
 if __name__ == "__main__":
-    a = TSP_DWave_Problem(N=10)
-    sol = a.solve_with_LEAP(plot=True)
+    for i in range(5):
+        print("Iteration: ", i)
+        a = TSP_DWave_Problem(N=50)
+        sol = a.solve_with_LEAP(plot=False)
+        times.append(a.time)
+        distances.append(a.total_distance)
+        print(a.tour)
+
+print("Average time for 100 cities: ", sum(times) / len(times))
+print("Average distance for 100 cities: ", min(distances))
