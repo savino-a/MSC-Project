@@ -17,7 +17,7 @@ def f(v):
 
 # Interval [a, b] and degree n
 a, b = 0, 250
-n = 1
+n = 0
 
 # Choose n+1 interpolation points
 x_points = np.linspace(a, b, 1000)
@@ -81,9 +81,10 @@ def Pacc(x, y):
 
 
 # Plotting
-x_plot = x_points
-plt.plot(x_plot, y_points_bis, label="Original function")
-plt.plot(x_plot, p(x_plot), label=f"Polynomial degree {n}")
-plt.legend()
-plt.grid(True)
-plt.show()
+if __name__ == "__main__":
+    x_plot = x_points
+    plt.plot(x_plot, y_points_bis, label="Original function")
+    plt.plot(x_plot, p(x_plot), label=f"Polynomial degree {n}")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
