@@ -237,7 +237,7 @@ class DWave_Problem:
     def solve_with_LEAP(self, plot=False):
         """sampleset = LeapHybridBQMSampler().sample(bqmodel, time_limit=120)"""
         sampler = LeapHybridSampler()
-        sample_set = sampler.sample(self.bqm)
+        sample_set = sampler.sample(self.bqm, time_limit=120)
         self.best_sample = sample_set.first.sample
         self.best_energy = sample_set.first.energy
         self.solution_vector = list(self.best_sample.values())
@@ -314,11 +314,11 @@ SA_max_speed = []
 Dwave_time = []
 SA_time = []
 
-for i in range(5):
+for i in range(1):
     print(f"Iteration {i}")
     a = DWave_Problem(N=50, D=150, vmax=4, eff=True)
     start_time = time.time()
-    sol = a.solve_with_LEAP(plot=False)
+    sol = a.solve_with_LEAP(plot=True)
     end_time = time.time()
     Dwave_time.append(end_time - start_time)
     Dwave_energy.append(a.best_energy)
